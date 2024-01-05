@@ -24,8 +24,6 @@ struct disk_latency_key_t {
     u64 bucket;
 };
 
-extern int LINUX_KERNEL_VERSION __kconfig;
-
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 10000);
@@ -75,37 +73,13 @@ static __always_inline int trace_rq_start(struct request *rq)
     return 0;
 }
 
-SEC("raw_tp/block_rq_insert")
+SEC("tp_btf/block_rq_insert")
 int block_rq_insert(struct bpf_raw_tracepoint_args *ctx)
 {
-    /**
-     * commit a54895fa (v5.11-rc1) changed tracepoint argument list
-     * from TP_PROTO(struct request_queue *q, struct request *rq)
-     * to TP_PROTO(struct request *rq)
-     */
-    if (LINUX_KERNEL_VERSION < KERNEL_VERSION(5, 10, 137)) {
-        return trace_rq_start((void *) ctx->args[1]);
-    } else {
-        return trace_rq_start((void *) ctx->args[0]);
-    }
+    return trace_rq_start((void *) ctx->args[0]);
 }
 
-SEC("raw_tp/block_rq_issue")
-int block_rq_issue(struct bpf_raw_tracepoint_args *ctx)
-{
-    /**
-     * commit a54895fa (v5.11-rc1) changed tracepoint argument list
-     * from TP_PROTO(struct request_queue *q, struct request *rq)
-     * to TP_PROTO(struct request *rq)
-     */
-    if (LINUX_KERNEL_VERSION < KERNEL_VERSION(5, 10, 137)) {
-        return trace_rq_start((void *) ctx->args[1]);
-    } else {
-        return trace_rq_start((void *) ctx->args[0]);
-    }
-}
-
-SEC("raw_tp/block_rq_complete")
+SEC("tp_btf/block_rq_complete")
 int block_rq_complete(struct bpf_raw_tracepoint_args *ctx)
 {
     u64 *tsp, flags, delta_us, ts = bpf_ktime_get_ns();
