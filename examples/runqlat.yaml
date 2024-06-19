@@ -1,0 +1,17 @@
+metrics:
+  histograms:
+    - name: runq_latency_seconds
+      help: Run queue latency histogram
+      bucket_type: exp2
+      bucket_min: 0
+      bucket_max: 27
+      bucket_multiplier: 0.000001 # microseconds to seconds
+      labels:
+        - name: pid
+          size: 8
+          decoders:
+            - name: uint
+        - name: bucket
+          size: 8
+          decoders:
+            - name: uint
